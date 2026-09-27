@@ -1,12 +1,12 @@
-##Proyecto Capstone: Análisis Exploratorio de Datos (EDA) en PostgreSQL
+## Proyecto Capstone: Análisis Exploratorio de Datos (EDA) en PostgreSQL
 
-  Este proyecto reproduce el trabajo de un analista de datos sobre un e-comerce. Se diseñó una base relacional en PostgreSQL, se cargaron los datos de clientes, productos y pedidos, se aplicó un proceso de validación y limpieza, y se construyeron consultas SQL orientadas a resolver preguntas de negocio
+  Este proyecto reproduce el trabajo de un analista de datos sobre un e-comerce. Se diseñó una base relacional en PostgreSQL, se cargaron los datos de clientes, productos y pedidos, se aplicó un proceso de validación y limpieza, y se construyeron consultas SQL orientadas a resolver preguntas de negocio.
 
-  El objetivo de este proyecto de negocio logra transformar datos en infomracion para poder responder: quién compra, cuándo, qué producto no se mueve y qué sostiene realmente los ingresos
+  El objetivo de este proyecto de negocio logra transformar datos en infomracion para poder responder: quién compra, cuándo, qué producto no se mueve y qué sostiene realmente los ingresos.
 
 ## Cómo ejecutarlo
 
-Requiere PostgreSQL 14 o superior
+Requiere PostgreSQL 14 o superior.
 
 ## Contenido del repositorio
 
