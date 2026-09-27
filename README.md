@@ -1,49 +1,35 @@
-# Capstone: Análisis Exploratorio de Datos en PostgreSQL
+##Proyecto Capstone: Análisis Exploratorio de Datos (EDA) en PostgreSQL
 
-Análisis de las ventas 2025 de una tienda online argentina para responder: **¿de qué clientes, productos y momentos del año depende realmente la facturación, y dónde hay riesgo u oportunidad?**
+  Este proyecto reproduce el trabajo de un analista de datos sobre un e-comerce. Se diseñó una base relacional en PostgreSQL, se cargaron los datos de clientes, productos y pedidos, se aplicó un proceso de validación y limpieza, y se construyeron consultas SQL orientadas a resolver preguntas de negocio
 
-> **Sobre los datos:** el dataset es **sintético** (semilla fija, reproducible), generado para este proyecto: 40 clientes, 20 productos en 5 categorías y 400 pedidos de 2025. Se le incorporaron nulos deliberadamente para practicar la limpieza. Los hallazgos ilustran el método de análisis; no describen un negocio real.
-
-## Problema de negocio
-
-La dirección quiere decidir dónde poner presupuesto de marketing y stock. Para eso necesita saber (1) qué tan concentrada está la facturación en pocos clientes, (2) cuándo se vende, (3) qué productos no rotan y (4) qué categorías y productos sostienen el negocio.
-
-## Contenido del repositorio
-
-| Archivo | Qué hace |
-|---|---|
-| `estructura.sql` | Crea las tablas `clientes`, `productos` y `pedidos` (con claves, restricciones e índices) y carga los datos. |
-| `analisis.sql` | Verifica tipos, diagnostica y limpia nulos, y resuelve las 4 consultas de análisis, comentadas. |
-| `README.md` | Este documento. |
+  El objetivo de este proyecto de negocio logra transformar datos en infomracion para poder responder: quién compra, cuándo, qué producto no se mueve y qué sostiene realmente los ingresos
 
 ## Cómo ejecutarlo
 
-Requiere PostgreSQL 14 o superior (probado en 16).
+Requiere PostgreSQL 14 o superior
 
-```bash
-createdb capstone_project
-psql -v ON_ERROR_STOP=1 -d capstone_project -f estructura.sql
-psql -v ON_ERROR_STOP=1 -d capstone_project -f analisis.sql
-```
+## Contenido del repositorio
 
-`ON_ERROR_STOP=1` frena la ejecución ante el primer error en lugar de seguir con datos a medias. Ambos scripts se pueden volver a correr: `estructura.sql` recrea las tablas y `analisis.sql` usa `CREATE OR REPLACE VIEW`.
+| Archivo | Contenido |
+|---|---|
+| `estructura.sql` | Tablas con tipos, claves e índices, y carga de datos |
+| `analisis.sql` | Limpieza y las cuatro consultas de análisis, comentadas |
+| `README.md` | Este documento |
 
-## Limpieza de datos
+## Modelo de datos
 
-| Problema | Cantidad | Tratamiento |
-|---|---|---|
-| `precio_unitario` nulo | 26 pedidos (6,5 %) | `COALESCE` con el `precio_lista` del producto |
-| `fecha_pedido` nula | 11 pedidos (2,8 %) | Se deja nula y se reporta aparte como "Sin fecha" |
+Tres tablas: `clientes`, `productos` y `pedidos`. Cada pedido referencia a un cliente y a un producto por su ID (clave foránea), en vez de repetir sus datos:
 
-**Por qué estas decisiones.** Descartar los pedidos sin precio habría subestimado la facturación en un 6,5 %; usar el precio de lista es la mejor estimación disponible, con el costo de sobrestimar levemente si hubo descuentos. Con las fechas no se imputó nada: inventar una fecha distorsionaría justo lo que se quiere medir, la estacionalidad. Los tipos se verificaron contra `information_schema`: fechas como `DATE` y dinero como `NUMERIC(12,2)`, nunca `FLOAT`.
+<img width="450" height="441" alt="image" src="https://github.com/user-attachments/assets/f095aa81-a983-427c-ab9f-0fbd58a8a3c2" />
 
-**Cuánto condiciona esto las conclusiones:** $1.108.000 de los $17.162.200 facturados (6,5 %) son estimados, y $582.600 (3,4 %) no se pueden ubicar en ningún mes. Es un margen acotado: no cambia ningún ranking de los que siguen, pero conviene que quien cargue los pedidos corrija el origen del dato.
+Las fechas se guardan como `DATE` y el dinero como `NUMERIC`
 
-## Hallazgos e interpretación
+## Las cuatro preguntas
 
-### 1. La facturación depende demasiado de un solo cliente
+### 1. ¿Quiénes sostienen la facturación?
+*`GROUP BY` + `SUM`, con `SUM() OVER ()` para el porcentaje sobre el total*
 
-| Cliente | Ciudad | Pedidos | Gasto | % del total |
+| Cliente | Ciudad | Pedidos | Gasto total | % del total |
 |---|---|---|---|---|
 | Lucas Flores | Mar del Plata | 81 | $3.082.000 | 18,0 % |
 | Florencia Ramírez | Buenos Aires | 30 | $1.245.700 | 7,3 % |
@@ -51,41 +37,65 @@ psql -v ON_ERROR_STOP=1 -d capstone_project -f analisis.sql
 | Joaquín Acosta | Buenos Aires | 24 | $861.900 | 5,0 % |
 | Diego Fernández | Buenos Aires | 22 | $815.200 | 4,7 % |
 
-Los 5 mejores clientes (12,5 % de la base de 40) aportan el 41,3 % de los ingresos, pero lo llamativo es el primero: **un solo cliente explica el 18 % de la facturación y el 20 % de todos los pedidos**, más del doble que el segundo. Con esa forma de distribución, perderlo tendría un impacto directo en los resultados. Antes de armar un programa de fidelización hay que averiguar quién es: por volumen (81 pedidos en un año) podría ser un revendedor o una cuenta compartida, y en ese caso corresponde tratarlo como cliente mayorista, con condiciones y seguimiento propios, en lugar de como comprador individual.
+  El Top 5 concentra el 41,3 % con solo el 12,5 % de los clientes. El primero sobresale: 1 de cada 5 pedidos del año es suyo, y gasta más del doble que el segundo. Ese volumen sugiere un revendedor más que un consumidor final. Seria de gran informacion identificar quien es.
 
-### 2. Tres meses concentran más de un tercio del año
+### 2. ¿Cuándo se vende?
+*`DATE_TRUNC` para agrupar por mes, `COALESCE` para no perder los pedidos sin fecha*
 
-Mayo ($2,21 M), noviembre ($2,13 M) y diciembre ($1,93 M) suman $6,28 M, el 36,6 % de la facturación anual. Mayo coincide con eventos de descuento como el Hot Sale, y noviembre-diciembre con Black Friday y las fiestas. En el otro extremo, **septiembre fue el peor mes ($499 mil), 77 % menos que mayo**, con solo 20 pedidos.
-
-Implicancias: el stock y la logística deben dimensionarse para esos picos, y septiembre es el mes donde una campaña propia tiene más margen para mover la aguja porque la demanda espontánea es mínima. Hay que tener presente que estas cifras son de un solo año; con un único ciclo no se puede distinguir estacionalidad estable de un caso puntual.
-
-### 3. Los productos menos vendidos no son todos el mismo problema
-
-| Producto | Unidades | Ingreso |
+| Mes | Pedidos | Ventas |
 |---|---|---|
-| Bicicleta rodado 29 | 1 | $315.000 |
-| Colchoneta de yoga | 2 | $24.000 |
-| Aspiradora robot | 3 | $630.000 |
+| Ene | 18 | $765.200 |
+| Feb | 26 | $1.553.300 |
+| Mar | 27 | $981.000 |
+| Abr | 26 | $1.371.000 |
+| **May** | **54** | **$2.211.200** |
+| Jun | 32 | $1.254.300 |
+| Jul | 29 | $1.483.800 |
+| Ago | 27 | $1.208.100 |
+| **Sep** | **20** | **$499.000** |
+| Oct | 29 | $1.186.800 |
+| **Nov** | **53** | **$2.132.400** |
+| **Dic** | **48** | **$1.933.500** |
+| Sin fecha | 11 | $582.600 |
 
-Vender poco no equivale a aportar poco. La bicicleta y la aspiradora son productos de ticket alto: con 1 y 3 unidades generan más ingreso que la colchoneta (ticket de $12.000) con 2. Sacarlos del catálogo por su baja rotación sería un error; lo razonable es mantenerlos y evaluar si el capital inmovilizado en stock se justifica. **La colchoneta sí es el candidato real a liquidación o a venderse en combo** (por ejemplo con las mancuernas, de la misma categoría y que rotan bien): combina baja rotación y bajo ticket.
+  Mayo, Noviembre y Diciembre suman $6,28 M (36,6 % del año). Septiembre cae un 77 % respecto de Mayo. Conviene planificar stock y logística para los picos.
 
-### 4. Volumen y facturación cuentan historias distintas
+### 3. ¿Qué no se mueve?
+*`LEFT JOIN` desde productos, para no perder los que nunca se vendieron*
 
-Por facturación lidera Indumentaria (32,8 %), seguida de Electrónica (22,9 %). **Libros tiene la mayor cantidad de pedidos (117) pero es la categoría que menos factura (12,7 %)**: atrae tráfico, pero no mueve el resultado.
+| Producto | Categoría | Unidades | Ingreso |
+|---|---|---|---|
+| Bicicleta rodado 29 | Deportes | 1 | $315.000 |
+| Colchoneta de yoga | Deportes | 2 | $24.000 |
+| Aspiradora robot | Hogar | 3 | $630.000 |
 
-El ranking con `RANK()` dentro de cada categoría lo confirma a nivel producto. En Indumentaria, la remera deportiva lidera en pedidos (36) pero las zapatillas running, con 19 pedidos, son el producto que más factura de todo el catálogo ($2,27 M). Algo similar ocurre en Electrónica, donde el parlante portátil (21 pedidos) factura más del doble que el cargador que lidera el ranking (30 pedidos). Rankear solo por cantidad esconde a los productos que realmente sostienen los ingresos. También se observa un empate en Hogar (sábanas y cafetera, 14 pedidos cada uno, ambos en la posición 2), caso en que `RANK()` respeta la igualdad y salta a la posición 4, algo que `ROW_NUMBER()` no haría.
+  Vender poco no es lo mismo que aportar poco: la bicicleta, con una sola venta, factura 13 veces más que la colchoneta. Sin embargo, solo la colchoneta combina baja rotación con ticket bajo.
 
-## Conclusiones estratégicas
+### 4. ¿Qué producto lidera cada categoría?
+*`RANK() OVER (PARTITION BY categoria ORDER BY cant_pedidos DESC)` sobre una subconsulta agrupada*
 
-1. **Reducir la dependencia del cliente principal**: identificar su perfil y definir un tratamiento específico; en paralelo, ampliar la base de compradores frecuentes, que hoy aporta poco individualmente.
-2. **Planificar en torno a mayo, noviembre y diciembre**: stock y capacidad de entrega para los picos; acciones de demanda propias en septiembre.
-3. **No decidir el catálogo por unidades vendidas**: usar el ingreso junto con el volumen. Liquidar o combinar la colchoneta; conservar bicicleta y aspiradora.
-4. **Priorizar promoción en Indumentaria y Electrónica**, donde cada pedido rinde más, y usar Libros como producto de entrada más que como fuente de margen.
+| Categoría | Pedidos | Ingreso | % del total |
+|---|---|---|---|
+| Indumentaria | 90 | $5.627.200 | 32,8 % |
+| Electrónica | 73 | $3.922.900 | 22,9 % |
+| Hogar | 71 | $2.746.900 | 16,0 % |
+| Deportes | 49 | $2.678.600 | 15,6 % |
+| Libros | 117 | $2.186.600 | 12,7 % |
+
+  El líder en volumen casi nunca es el líder en facturación: en "Indumentaria", las zapatillas running tienen la mitad de pedidos que la remera pero facturan más que cualquier otro producto del catálogo. "Libros" es el extremo opuesto: la categoría con más pedidos es la que menos factura.
+
+## Resumen
+
+1. Un solo cliente aporta el 18 % de la facturación: el mayor riesgo del negocio
+2. Mayo, Noviembre y Diciembre venden el 37 % del año; Septiembre es el mes más flojo
+3. De los productos con menor rotación, solo uno tiene además ticket bajo; los otros dos valen la pena igual
+4. La categoria "Libros" genera más pedidos que cualquier categoría, pero es la que menos factura; "Indumentaria" es la que más aporta
 
 ## Limitaciones
 
-- Datos sintéticos de un solo año; los patrones son ilustrativos.
-- Se mide **ingreso**, no rentabilidad: sin costos no se puede afirmar qué categoría deja más margen.
-- El 6,5 % de ingresos con precio imputado asume que no hubo descuento en esos pedidos.
-- Cada pedido contiene un único producto, por lo que no se analiza el ticket de compra con varios ítems.
+- Se mide ingreso, no rentabilidad: sin costos no se sabe qué categoría deja más margen
+- Es un solo año: no confirma tendencia
+- El 6,5 % de ingresos imputados asume que no hubo descuento sobre el precio de lista
+- Cada pedido tiene un único producto: no se analiza qué se compra junto
+
 
