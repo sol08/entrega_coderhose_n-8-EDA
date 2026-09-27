@@ -75,7 +75,7 @@ Las fechas se guardan como `DATE` y el dinero como `NUMERIC`
 ### 4. ¿Qué producto lidera cada categoría?
 *`RANK() OVER (PARTITION BY categoria ORDER BY cant_pedidos DESC)` sobre una subconsulta agrupada*
 
-| Categoría | Pedidos | Ingreso | % del total | Producto líder (por pedidos) |
+| Categoría | Pedidos | Ingreso | % del total | Producto líder |
 |---|---|---|---|---|
 | Indumentaria | 90 | $5.627.200 | 32,8 % | Remera deportiva |
 | Electrónica | 73 | $3.922.900 | 22,9 % | Cargador rápido USB-C |
