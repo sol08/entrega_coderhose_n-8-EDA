@@ -58,7 +58,8 @@ Las fechas se guardan como `DATE` y el dinero como `NUMERIC`
 | **Dic** | **48** | **$1.933.500** |
 | Sin fecha | 11 | $582.600 |
 
-  Mayo, Noviembre y Diciembre suman $6,28 M (36,6 % del año). Septiembre cae un 77 % respecto de Mayo. Conviene planificar stock y logística para los picos.
+  Mayo, Noviembre y Diciembre suman $6,28 M (36,6 % del año). Septiembre cae un 77 % respecto de Mayo.
+  Conviene planificar stock y logística para los picos.
 
 ### 3. ¿Qué no se mueve?
 *`LEFT JOIN` desde productos, para no perder los que nunca se vendieron*
