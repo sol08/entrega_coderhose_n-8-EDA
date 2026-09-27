@@ -75,14 +75,16 @@ Las fechas se guardan como `DATE` y el dinero como `NUMERIC`
 ### 4. ¿Qué producto lidera cada categoría?
 *`RANK() OVER (PARTITION BY categoria ORDER BY cant_pedidos DESC)` sobre una subconsulta agrupada*
 
-| Ranking | Producto | Categoría | Pedidos | Ingreso |
+| Categoría | Pedidos | Ingreso | % del total | Producto líder (por pedidos) |
 |---|---|---|---|---|
-| 1 | Remera deportiva | Indumentaria | 36 | $744.800 |
-| 2 | Zapatillas running | Indumentaria | 19 | $2.270.500 |
-| 3 | Mochila urbana | Indumentaria | 18 | $875.900 |
-| 4 | Campera impermeable | Indumentaria | 17 | $1.736.000 |
+| Indumentaria | 90 | $5.627.200 | 32,8 % | Remera deportiva |
+| Electrónica | 73 | $3.922.900 | 22,9 % | Cargador rápido USB-C |
+| Hogar | 71 | $2.746.900 | 16,0 % | Lámpara LED de escritorio |
+| Deportes | 49 | $2.678.600 | 15,6 % | Pelota de fútbol |
+| Libros | 117 | $2.186.600 | 12,7 % | Guía de cocina |
 
-  El líder en volumen casi nunca es el líder en facturación: en "Indumentaria", las zapatillas running tienen la mitad de pedidos que la remera pero facturan más que cualquier otro producto del catálogo. "Libros" es el extremo opuesto: la categoría con más pedidos es la que menos factura.
+  Libros es la categoría con más pedidos de todas (117), pero es la que menos dinero genera.
+  Es una categoría que probablemente se podria usar para atraer gente a la tienda, pero no es la que sostiene el negocio.
 
 ## Resumen
 
